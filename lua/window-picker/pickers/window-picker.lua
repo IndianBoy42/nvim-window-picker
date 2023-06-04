@@ -15,6 +15,7 @@ end
 function M:set_config(config)
 	self.chars = config.chars
 	self.create_chars = config.create_chars
+	self.process_unknown_char = config.process_unknown_char
 	self.show_prompt = config.show_prompt
 	self.prompt_message = config.prompt_message
 	self.autoselect_one = config.filter_rules.autoselect_one
@@ -73,7 +74,7 @@ function M:pick_window()
 		return windows[1]
 	end
 
-	self.hint:draw(windows, self.or_create)
+	local windowlist = self.hint:draw(windows, self.or_create)
 
 	vim.cmd.redraw()
 
@@ -105,6 +106,10 @@ function M:pick_window()
 
 	if char then
 		window = self:_find_matching_win_for_char(char, windows, create_action)
+	end
+
+	if not window and self.process_unknown_char then
+		window = self.process_unknown_char(char, windowlist)
 	end
 
 	return window

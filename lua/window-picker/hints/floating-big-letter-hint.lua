@@ -43,6 +43,7 @@ end
 function M:set_config(config)
 	self.chars = config.chars
 	self.create_chars = config.create_chars
+	self.pre_assign_chars = config.pre_assign_chars
 	local font = config.picker_config.floating_big_letter.font
 
 	if type(font) == 'string' then
@@ -138,9 +139,20 @@ function M:_show_letter_in_window(window, char, position)
 end
 
 function M:draw(windows, or_create)
-	for index, window in ipairs(windows) do
+	local windowlist = {}
+	for _, win in ipairs(windows) do
+		windowlist[win] = false
+	end
+	if self.pre_assign_chars then
+		windowlist = self.pre_assign_chars(windowlist)
+	end
+
+	local index = 1
+	for window, char in pairs(windowlist) do
 		do
-			local char = self.chars[index]
+			char = char or self.chars[index]
+			windowlist[window] = char
+			index = index + 1
 			local big_char = self.big_chars[char:lower()]
 			local window_id = self:_show_letter_in_window(window, big_char)
 			table.insert(self.windows, window_id)
@@ -157,6 +169,8 @@ function M:draw(windows, or_create)
 			end
 		end
 	end
+
+	return windowlist
 end
 
 local function clear_list_of_windows(windows)
