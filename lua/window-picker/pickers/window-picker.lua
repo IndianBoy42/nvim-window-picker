@@ -1,4 +1,5 @@
 local util = require('window-picker.util')
+local sentinel_curwin = '<sentinel-curwin>'
 
 ---@class WindowPicker
 local M = {}
@@ -39,15 +40,21 @@ function M:_get_windows()
 end
 
 function M:_find_matching_win_for_char(user_input_char, windows, create_action)
-	for index, char in ipairs(self.chars) do
-		if user_input_char:lower() == char:lower() then
-			local w = windows[index]
-			if create_action then
-				return create_action(w)
-			else
-				return w
+	local w
+	if user_input_char == sentinel_curwin then
+		w = vim.api.nvim_get_current_win()
+	else
+		for index, char in ipairs(self.chars) do
+			if user_input_char:lower() == char:lower() then
+				w = windows[index]
+				break
 			end
 		end
+	end
+	if create_action then
+		return create_action(w)
+	else
+		return w
 	end
 end
 
@@ -93,7 +100,13 @@ function M:pick_window()
 			if self.autoselect_one and #windows == 1 then
 				char = self.chars[1]
 			else
+				local first = char
+
 				char = util.get_user_input_char()
+
+				if char == first then
+					char = sentinel_curwin
+				end
 			end
 		end
 	end
